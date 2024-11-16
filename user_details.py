@@ -6,7 +6,7 @@ def input_user_details():
     # Create the table layout with checkboxes
     st.write(f"### DISC Personality Assessment")
     st.write("""Your Payment has been processed! For any queries, please contact dino.grif@gmail.com""")
-    st.write("### Payment Successful! Please fill in your details")
+    st.write("### Please fill in your details")
     
     # Collect user details
     st.session_state.user_details['name'] = st.text_input("Name *", st.session_state.user_details['name'])
