@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 
-from paywall import access_paywall
 from user_details import input_user_details
 from checkbox_change import on_change_checkbox
 from save_selection import save_selections
