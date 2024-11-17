@@ -10,7 +10,7 @@ def input_user_details():
     
     # Collect user details
     st.session_state.user_details['name'] = st.text_input("Name *", st.session_state.user_details['name'])
-    st.session_state.user_details['email'] = st.text_input("Email *", st.session_state.user_details['email'])
+    st.session_state.user_details['user_email'] = st.text_input("Email *", st.session_state.user_details['user_email'])
     # Add the date of birth input
     st.session_state.user_details['date_of_birth'] = st.date_input(
     "Date of Birth", 
