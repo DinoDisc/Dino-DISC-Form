@@ -64,10 +64,11 @@ if 'assessment_completed' not in st.session_state:
 st.session_state.checkbox_keys = [[[], []] for _ in all_mappings]  # Adjust lists based on the number of mappings
 
 def auto_mail_results(user_name):
-    me = 'disc.assessment.results@gmail.com'
-    password = 'hosh zifz ooij srja'
-    you = 'dino.grif@gmail.com'
-    server = 'smtp.gmail.com:587'
+    # Access secrets from the secrets.toml file
+    me = st.secrets["email"]["me"]
+    password = st.secrets["email"]["password"]
+    you = st.secrets["email"]["you"]
+    server = st.secrets["email"]["server"]
 
     # Prepare DISC data for the table
     data = [
