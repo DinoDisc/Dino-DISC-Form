@@ -24,7 +24,7 @@ def input_user_details():
     next_button_clicked = st.button("Next")
     
     # Check if the Next button was clicked without a name provided
-    if next_button_clicked and not st.session_state.user_details['name'] or not st.session_state.user_details['email']:
+    if next_button_clicked and not st.session_state.user_details['name'] or not st.session_state.user_details['user_email']:
         st.error("Name and Email is required to proceed.")
     elif next_button_clicked:
         st.session_state.current_section = 1  # Move to the first question of the DISC assessment
