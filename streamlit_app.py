@@ -266,5 +266,5 @@ else:
     user_email = st.session_state.user_details['user_email']
     auto_mail_results(user_name, user_email)
     st.write(f"### Thank you, {user_name}, for completing the assessment!")
-    st.write("Your results have been sent to Dino. He will be in contact through {user_email}")
-    
+    st.write(f"Your results have been sent to Dino. He will be in contact through {user_email}")
+    st.write("If you have any questions, do not hesitate to reach out at: dino.grif@gmail.com") 
