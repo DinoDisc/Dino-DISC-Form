@@ -63,7 +63,7 @@ if 'assessment_completed' not in st.session_state:
 # Initialize the keys for checkboxes
 st.session_state.checkbox_keys = [[[], []] for _ in all_mappings]  # Adjust lists based on the number of mappings
 
-def auto_mail_results(user_name):
+def auto_mail_results(user_name, user_email):
     # Access secrets from the secrets.toml file
     me = st.secrets["email"]["me"]
     password = st.secrets["email"]["password"]
@@ -82,7 +82,7 @@ def auto_mail_results(user_name):
     text = f"""
     This is confirmation of the completion of the DISC Assessment by {user_name}.
     
-    Contact {user_name} email: {st.session_state.user_details['email']}.
+    Contact {user_name} email: {email}.
     Date of Birth: {st.session_state.user_details['date_of_birth']}
     Gender: {st.session_state.user_details['gender']}
     
@@ -94,6 +94,7 @@ def auto_mail_results(user_name):
 
     html = f"""
     <html><body><p>This is confirmation of the completion of the DISC Assessment by {user_name}.</p>
+    <p>Email: {st.session_state.user_details['user_email']}</p>
     <p>Date of Birth: {st.session_state.user_details['date_of_birth']}</p>
     <p>Gender: {st.session_state.user_details['gender']}</p>
     {tabulate(data, headers="firstrow", tablefmt="html")}
@@ -262,7 +263,8 @@ else:
     
     # Thank you message
     user_name = st.session_state.user_details['name']
-    auto_mail_results(user_name)
+    user_email = st.session_state.user_details['user_email']
+    auto_mail_results(user_name, user_email)
     st.write(f"### Thank you, {user_name}, for completing the assessment!")
-    st.write("Your results have been sent to Dino.")
+    st.write("Your results have been sent to Dino. He will be in contact through {user_email}")
     
