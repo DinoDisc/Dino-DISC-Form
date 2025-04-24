@@ -116,7 +116,7 @@ def auto_mail_results(user_name, user_email):
     message_alternative.attach(MIMEText(html, 'html'))
     
     # Create a single figure with three subplots
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axs = plt.subplots(1, 3, figsize=(7.5, 2.5), dpi=200)
 
     values_most = [int(score) for score in most_likely_scores]  
     values_least = [int(score) for score in least_likely_scores]
