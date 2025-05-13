@@ -5,10 +5,13 @@ import json
 from user_details import input_user_details
 from checkbox_change import on_change_checkbox
 from save_selection import save_selections
+from disc_pdf import build_pdf
 
-from graph_most import plot_disc_graph_most
-from graph_least import plot_disc_graph_least
-from graph_change import plot_disc_graph_change
+from graphing import (
+    plot_disc_graph_most,
+    plot_disc_graph_least,
+    plot_disc_graph_change,
+)
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -18,6 +21,12 @@ import smtplib
 import streamlit as st
 
 import matplotlib.pyplot as plt
+import os 
+from email.mime.application import MIMEApplication
+
+# Dimensions for DISC graphs in points (1 pt = 1 px @ 72 dpi)
+FIGSIZE_PT = (150, 200)
+FIGSIZE_IN = (FIGSIZE_PT[0] / 72, FIGSIZE_PT[1] / 72)
 
 # Load mappings from JSON file
 with open('disc_mappings.json', 'r') as f:
@@ -98,8 +107,7 @@ def auto_mail_results(user_name, user_email):
     <p>Date of Birth: {st.session_state.user_details['date_of_birth']}</p>
     <p>Gender: {st.session_state.user_details['gender']}</p>
     {tabulate(data, headers="firstrow", tablefmt="html")}
-    <p>See attached images for the plotted DISC scores:</p>
-    <img src="cid:image1"><br>
+    <p>See attached PDF for the plotted DISC scores.</p>
     </body></html>
     """
 
@@ -115,31 +123,49 @@ def auto_mail_results(user_name, user_email):
     message_alternative.attach(MIMEText(text, 'plain'))
     message_alternative.attach(MIMEText(html, 'html'))
     
-    # Create a single figure with three subplots
-    fig, axs = plt.subplots(1, 3, figsize=(6.5, 2.25), dpi=200)
-
-    values_most = [int(score) for score in most_likely_scores]  
-    values_least = [int(score) for score in least_likely_scores]
-    values_change = [int(score) for score in difference_scores]
-
-    # Plot each graph on its respective axis
-    plot_disc_graph_most(values_most, axs[0])
-    plot_disc_graph_least(values_least, axs[1])
-    plot_disc_graph_change(values_change, axs[2])
+    fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
+    paths = {}
     
-    # Save the combined figure
-    fig.tight_layout()  # Adjust layout to prevent overlap
-    fig.savefig('/tmp/all_disc_graphs.png')
-    plt.close(fig)  # Close the figure properly after saving
-
-    # Attach the combined image to the email
-    file_path = '/tmp/all_disc_graphs.png'
-    cid = 'image1'
-    with open(file_path, 'rb') as img_file:
-        img = MIMEImage(img_file.read())
-        img.add_header('Content-ID', f'<{cid}>')
-        message.attach(img)
-
+    for scores, fn, key in [
+        (most_likely_scores,  plot_disc_graph_most,   "most"),
+        (least_likely_scores, plot_disc_graph_least,  "least"),
+        (difference_scores,   plot_disc_graph_change, "change"),
+    ]:
+    
+        fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
+        fn(scores, ax)
+        path = f"/tmp/{key}.png"
+        fig.savefig(path, bbox_inches="tight", transparent=True)
+        plt.close(fig)
+        paths[key] = path
+        
+    # -------- build a dict the PDF layer can consume -----------------
+    scores = {
+        "most":   {**st.session_state.disc_scores_most,
+                   "Total": sum(st.session_state.disc_scores_most.values())},
+        "least":  {**st.session_state.disc_scores_least,
+                   "Total": sum(st.session_state.disc_scores_least.values())},
+        "change": {"D": diff_D, "I": diff_I, "S": diff_S, "C": diff_C,
+                   "*": "-",   "Total": diff_total},
+    }
+    
+    pdf_path = build_pdf(
+        user = {
+            "name":   user_name,
+            "email":  user_email,
+            "date":   st.session_state.user_details["date_of_birth"],
+            "gender": st.session_state.user_details["gender"],
+        },
+        graphs = paths,
+        scores = scores,
+        out_path = "/tmp/DISC_Report.pdf",
+    )
+    
+    with open(pdf_path, "rb") as f:
+        part = MIMEApplication(f.read(), _subtype='pdf')
+    part.add_header('Content-Disposition', 'attachment', filename="DISC_Report.pdf")
+    message.attach(part)
+    
     # Send the email
     smtp_server = smtplib.SMTP(server)
     smtp_server.ehlo()
@@ -189,14 +215,15 @@ elif not st.session_state.assessment_completed:
         st.write("**Most Likely**")
         for option in mapping.keys():
             key = f"most_{idx}_{option}"
-            st.checkbox("", key=key, on_change=on_change_checkbox, args=(key, idx, 0))
+            st.checkbox(" ", key=key, on_change=on_change_checkbox, 
+                        args=(key, idx, 0), label_visibility="collapsed")
             st.session_state.checkbox_keys[idx][0].append(key)
 
     with col2:
         st.write("**Least Likely**")
         for option in mapping.keys():
             key = f"least_{idx}_{option}"
-            st.checkbox("", key=key, on_change=on_change_checkbox, args=(key, idx, 1))
+            st.checkbox(" ", key=key, on_change=on_change_checkbox, args=(key, idx, 1), label_visibility="collapsed")
             st.session_state.checkbox_keys[idx][1].append(key)
 
     with col3:
@@ -228,7 +255,6 @@ elif not st.session_state.assessment_completed:
                 st.rerun()  # Force a rerun to display the result
     else: 
         st.error("Please make a selection for both 'Most Likely' and 'Least Likely' options.")
-# ...
 
 else:
     # Calculate the sum for each row
