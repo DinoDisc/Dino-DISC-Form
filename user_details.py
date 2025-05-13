@@ -19,9 +19,7 @@ def input_user_details():
     max_value=datetime.today(),  # Set the maximum date to today
     format="MM/DD/YYYY" 
     )
-    st.session_state.user_details['gender'] = st.radio(
-        "Gender", options=["Male", "Female"], index=0)
-    
+    st.session_state.user_details['gender'] = st.radio("Gender", options=["Male", "Female"], index=0 if st.session_state.user_details['gender'] == "Do not disclose" else 1)
     # Always display the Next button
     next_button_clicked = st.button("Next")
     
