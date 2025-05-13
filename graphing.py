@@ -22,6 +22,10 @@ in *playground.py*.
 import numpy as np
 import matplotlib.pyplot as plt
 
+from matplotlib.patches import Rectangle
+import itertools
+
+
 __all__ = [
     "plot_disc_graph_most",
     "plot_disc_graph_least",
@@ -39,46 +43,46 @@ MID_Y   = 40                        # heavy solid
 TXT_OFFSET_UP   = 1.5
 TXT_OFFSET_DOWN = 1.5
 
-COLORS = {
-    "most":   "#1C80BC",
-    "least":  "#A00100",
-    "change": "#278D8D",
-}
-
-
-def _style_ax(ax, invert=False):
-    """Apply paper‑like styling to *ax* (assumes y in 0..80)."""
-
-    # frame -----------------------------------------------------------------
+def _style_ax(ax, *, invert=False, show_vals=False):
+    """Apply paper-like styling and optional numeric row labels."""
+    # clear frame
     for sp in ax.spines.values():
         sp.set_visible(False)
-    ax.set_xlim(-0.5, 3.5)              # four columns D,I,S,C
-    if invert:
-        ax.set_ylim(80, 0)              # LEAST graph counts downward
-    else:
-        ax.set_ylim(0, 80)
 
-    # grid ------------------------------------------------------------------
-    for y in GRID_Y:
-        if y == MID_Y:                  # heavy centre line
-            ax.axhline(y, lw=1.4, color="black", zorder=0)
-        elif y in MAJOR_Y:
-            ax.axhline(y, lw=0.8, ls=(0, (2, 2)), color="grey", zorder=0)
-        else:
-            ax.axhline(y, lw=0.35, ls="-", color="lightgrey", zorder=0)
+    ax.set_xlim(-0.5, 3.5)               # D,I,S,C
+    ax.set_ylim((80, 0) if invert else (0, 80))
 
-    # ticks/spines ----------------------------------------------------------
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_facecolor("none")
-    ax.figure.set_facecolor("none")
+    # ------------------------------------------------------------------
+    # draw 3 evenly-spaced dotted lines above and below the centre-line
+    # ------------------------------------------------------------------
+    mid = 40                 # heavy centre line
+    band_step = 80 / 8       # 8 equal rows  ⇒  step = 10 units
+    band_lines = [mid + i * band_step for i in (-3, -2, -1, 1, 2, 3)]
 
-    # top DISC labels -------------------------------------------------------
+    for y in band_lines:
+        ax.axhline(y,
+                   lw=0.7,
+                   ls=(0, (2, 2)),   # dotted
+                   color="grey",
+                   zorder=0)
+
+    # central thick line
+    ax.axhline(mid, lw=1.2, color="black", zorder=0)
+
+    # outer rectangle
+    rect = Rectangle((-0.5, 0), 4, 80, fill=False, lw=0.8, color="black", zorder=1)
+    ax.add_patch(rect)
+
+    # remove ticks/labels
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_facecolor("none"); ax.figure.set_facecolor("none")
+
+    # DISC column headers
     ax2 = ax.twiny()
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(range(4))
-    ax2.set_xticklabels(list("DISC"), fontsize=8)
-    ax2.tick_params(axis="x", length=0, pad=2)
+    ax2.set_xticklabels(list("DISC"), fontsize=7, weight="bold")
+    ax2.tick_params(axis="x", length=0, pad=1)
     ax2.spines["top"].set_visible(False)
 
 # ---------------------------------------------------------------------
@@ -98,9 +102,9 @@ def plot_disc_graph_most(values, ax):
     x = np.arange(4)
 
     _style_ax(ax, invert=False)
-    ax.plot(x, y, "o-", color=COLORS["most"], lw=1.2, zorder=1)
+    ax.plot(x, y, "o-", color="#1C80BC", lw=0.8, markersize=4, zorder=1)
     for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color=COLORS["most"])
+        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color="#1C80BC")
 
     return ax
 
@@ -120,10 +124,11 @@ def plot_disc_graph_least(values, ax):
     y = [mappings[L][v] for L, v in zip(labels, values)]
     x = np.arange(4)
 
-    _style_ax(ax, invert=True)
-    ax.plot(x, y, "o-", color=COLORS["least"], lw=1.2, zorder=1)
+    _style_ax(ax, invert=False)
+    ax.plot(x, y, "o-", color="#A00100", lw=0.8, markersize=4, zorder=1)
+
     for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy - TXT_OFFSET_DOWN, str(vv), ha="center", va="top", fontsize=8, color=COLORS["least"])
+        ax.text(xx, yy - TXT_OFFSET_DOWN, str(vv), ha="center", va="top", fontsize=8, color="#A00100")
 
     return ax
 
@@ -146,8 +151,9 @@ def plot_disc_graph_change(values, ax):
     x = np.arange(4)
 
     _style_ax(ax, invert=False)
-    ax.plot(x, y, "o-", color=COLORS["change"], lw=1.2, zorder=1)
+    ax.plot(x, y, "o-", color="#278D8D", lw=0.8, markersize=4, zorder=1)
+
     for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color=COLORS["change"])
+        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color="#278D8D")
 
     return ax

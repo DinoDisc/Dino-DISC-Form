@@ -16,6 +16,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from datetime import date
 from pathlib import Path
+from reportlab.lib.utils import ImageReader
 
 PAGE_W, PAGE_H = letter                       # 612 × 792 pt
 MARGIN_X = 36                                  # 0.5‑inch side margin
@@ -50,8 +51,8 @@ def draw_static_page(c: canvas.Canvas) -> None:
     gap_y = 16                               # vertical gap between rows
     underline_len = 192                      # uniform underline length
 
-    left_fields  = ["Name:", "Setting for Profile:"]  # removed Organization
-    right_fields = ["Date:", "Gender:"]               # removed Position
+    left_fields  = ["Name:", "Email:"] 
+    right_fields = ["Date of Birth:", "Gender:"]         
 
     # draw left‑hand labels & underlines
     for idx, label in enumerate(left_fields):
@@ -116,34 +117,16 @@ def draw_static_page(c: canvas.Canvas) -> None:
     txt(note_x - 2, table_top - 2 * row_h - 18, "Do not calculate ★ value", size=7)
 
     # explanatory note under table
-    small = "NOTE: If the Row 2 ('LEAST') number is larger than the Row 1 ('MOST') number, the number will be negative ('–') in Row 3.  REMEMBER: The '+' and '–' numbers can ONLY be plotted on GRAPH 3."
+    small = " "
     txt(MARGIN_X, table_top - 3 * row_h - 14, small, size=6)
 
-    # ── Graphing instructions ----------------------------------------
-    instr_top = table_top - 3 * row_h - 44
-    txt(MARGIN_X, instr_top, "Graphing:", size=9, bold=True)
-    bullets = [
-        "Plot Row 1 'MOST' onto Graph 1.",
-        "Plot Row 2 'LEAST' onto Graph 2.",
-        "Plot Row 3 'CHANGE' onto Graph 3. (Watch positive and negative numbers!)",
-        "Connect the D – I – S – C dots on each of the three graphs.  See Example below",
-    ]
-    for i, line in enumerate(bullets):
-        txt(MARGIN_X + 14, instr_top - (i + 1) * 12, f"{chr(65 + i)}. {line}", size=7.5)
-
-    instr_bottom = instr_top - len(bullets) * 12
-
     # ── Graph rectangles --------------------------------------------
-    g_w, g_h = 178, 235
-    g_y = instr_bottom - 22 - g_h
-    g_x = [MARGIN_X, MARGIN_X + g_w + 18, MARGIN_X + 2 * (g_w + 18)]
-
-    for gx in g_x:
-        c.rect(gx, g_y, g_w, g_h)
-        for k in range(1, 18):
-            y = g_y + k * (g_h / 18)
-            c.setLineWidth(0.3 if k % 3 else 0.6)
-            c.line(gx, y, gx + g_w, y)
+    g_w, g_h = 150, 200
+    g_gap = 16
+    g_y = PAGE_H - 500  # lowered from previous value to shift graphs downward
+    g_x = [MARGIN_X, 
+           MARGIN_X + g_w + g_gap,
+           MARGIN_X + 2 * (g_w + g_gap)]
 
     # graph headings + DISC blocks
     heads = [
@@ -154,53 +137,29 @@ def draw_static_page(c: canvas.Canvas) -> None:
     for (title, sub), gx in zip(heads, g_x):
         txt(gx, g_y + g_h + 10, title, size=8, bold=True)
         txt(gx, g_y + g_h - 4,  sub,   size=7)
-        for idx, L in enumerate("DISC"):
-            bx = gx + 14 + idx * 40
-            by = g_y + g_h - 24
-            c.setFillColor(colors.black)
-            c.rect(bx, by, 22, 14, fill=1, stroke=0)
-            c.setFillColor(colors.white)
-            txt(bx + 7, by + 3, L, size=7, bold=True)
-            c.setFillColor(colors.black)
-
-    # example mini‑graph (unchanged)
-    ex_x = g_x[2] + g_w + 28
-    ex_y = g_y + g_h - 52
-    txt(ex_x, ex_y + 46, "Example:", size=7, bold=True)
-    c.rect(ex_x, ex_y, 42, 64)
-    for i, L in enumerate("DISC"):
-        txt(ex_x + 4, ex_y + 48 - i * 14, L, size=6)
-    pts = [(ex_x + 17, ex_y + 54), (ex_x + 26, ex_y + 38), (ex_x + 14, ex_y + 26), (ex_x + 31, ex_y + 14)]
-    segs = [(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]) for i in range(len(pts) - 1)]
-    c.setLineWidth(0.9)
-    c.lines(segs)
-    c.setLineWidth(LINE_W_THIN)
-
-    # (NOTE BOX REMOVED)
-
     # footer -----------------------------------------------------------
-    txt(MARGIN_X, 60, "© Copyright 2000‑2024, The Institute for Motivational Living, Inc.  All rights reserved.  Reproduction prohibited.", size=6)
+    txt(MARGIN_X, 60, "© Copyright 2000 -- 2024, The Institute for Motivational Living, Inc.  All rights reserved.  Reproduction prohibited.", size=6)
 
 # ----------------------------------------------------------------------
 # 2 ─── DYNAMIC CONTENT (user data + real graphs) ----------------------
 # ----------------------------------------------------------------------
-from reportlab.lib.utils import ImageReader          # add this import at top
+
+# ---------- helpers ---------------------------------------------------
+def _draw_score_row(c, values, y0, table_left, col_w):
+    for i, val in enumerate(values):
+        x = table_left + i * col_w + col_w / 2
+        c.drawCentredString(x, y0, str(val))
 
 def draw_client_layer(c: canvas.Canvas,
+                      *,
                       user: dict,
-                      graphs: dict | None = None):
-    """
-    user   = {"name": str, "profile": str, "date": date|str,
-              "gender": "Male"|"Female"}
-    graphs = {"most": "/tmp/most.png",
-              "least": "/tmp/least.png",
-              "change": "/tmp/change.png"}
-    """
+                      graphs: dict | None = None,
+                      scores: dict | None = None):
 
     ## --- text fields -------------------------------------------------
     c.setFont("Helvetica", 9)
     c.drawString(MARGIN_X + 68, PAGE_H - 60,  user.get("name", ""))
-    c.drawString(MARGIN_X + 68, PAGE_H - 76,  user.get("profile", ""))
+    c.drawString(MARGIN_X + 68, PAGE_H - 76,  user.get("email", ""))
     # date
     date_str = (user.get("date") or date.today()).strftime("%d-%b-%Y")
     c.drawString(PAGE_W / 2 + 65, PAGE_H - 60, date_str)
@@ -215,31 +174,53 @@ def draw_client_layer(c: canvas.Canvas,
         tick_x = male_x + 3 if gender == "male" else female_x + 3
         c.drawString(tick_x, PAGE_H - 76, "X")
 
+    # fill-in score table ----------------
+    if scores:
+        table_top = PAGE_H - 150
+        row_h = 36
+        col_w = 46
+        table_left = MARGIN_X + 110
+        
+        rows = ("most", "least", "change")
+        for idx, key in enumerate(rows):
+            y_mid = table_top - idx * row_h - row_h / 2 - 3
+            row   = scores[key]
+            _draw_score_row(
+                c,
+                [row["D"], row["I"], row["S"], row["C"],
+                 row["*"], row["Total"]],
+                y_mid,
+                table_left,
+                col_w,
+            )
     ## --- embed PNG graphs -------------------------------------------
-    g_w, g_h = 178, 235
-    g_y = 255
-    g_x = [MARGIN_X, MARGIN_X + g_w + 18, MARGIN_X + 2*(g_w + 18)]
+    g_w, g_h = 150, 200
+    g_gap = 16
+    g_y = PAGE_H - 500
+    g_x = [MARGIN_X, 
+           MARGIN_X + g_w + g_gap, 
+           MARGIN_X + 2 * (g_w + g_gap)]
+
     order = ["most", "least", "change"]
 
     if graphs:
         for key, x in zip(order, g_x):
             path = graphs.get(key)
             if path:
-                c.drawImage(ImageReader(path), x, g_y, g_w, g_h,
-                            mask="auto")
+                c.drawImage(ImageReader(path), x, g_y, g_w, g_h, mask="auto")
     else:
-        # fallback light boxes if graphs not supplied
         c.setFillColor(colors.whitesmoke)
         for x in g_x:
             c.rect(x+1, g_y+1, g_w-2, g_h-2, fill=1, stroke=0)
         c.setFillColor(colors.black)
-
 # ----------------------------------------------------------------------
 # 3 ─── BUILD PDF ------------------------------------------------------
 # ----------------------------------------------------------------------
 
-def build_pdf(*, user: dict,
+def build_pdf(*, 
+              user: dict,
               graphs: dict | None = None,
+              scores: dict | None = None,
               out_path: str = "DISC_Draft.pdf") -> str:
     """
     Parameters
@@ -254,7 +235,7 @@ def build_pdf(*, user: dict,
     """
     c = canvas.Canvas(out_path, pagesize=letter)
     draw_static_page(c)
-    draw_client_layer(c, user=user, graphs=graphs)
+    draw_client_layer(c, user=user, graphs=graphs, scores=scores)
     c.showPage()
     c.save()
     abs_path = str(Path(out_path).resolve())

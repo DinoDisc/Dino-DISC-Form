@@ -24,6 +24,10 @@ import matplotlib.pyplot as plt
 import os 
 from email.mime.application import MIMEApplication
 
+# Dimensions for DISC graphs in points (1 pt = 1 px @ 72 dpi)
+FIGSIZE_PT = (150, 200)
+FIGSIZE_IN = (FIGSIZE_PT[0] / 72, FIGSIZE_PT[1] / 72)
+
 # Load mappings from JSON file
 with open('disc_mappings.json', 'r') as f:
     mappings = json.load(f)
@@ -103,8 +107,7 @@ def auto_mail_results(user_name, user_email):
     <p>Date of Birth: {st.session_state.user_details['date_of_birth']}</p>
     <p>Gender: {st.session_state.user_details['gender']}</p>
     {tabulate(data, headers="firstrow", tablefmt="html")}
-    <p>See attached images for the plotted DISC scores:</p>
-    <img src="cid:image1"><br>
+    <p>See attached PDF for the plotted DISC scores.</p>
     </body></html>
     """
 
@@ -120,7 +123,7 @@ def auto_mail_results(user_name, user_email):
     message_alternative.attach(MIMEText(text, 'plain'))
     message_alternative.attach(MIMEText(html, 'html'))
     
-    g_size = (178/72, 235/72)      # inches @ 72 dpi
+    fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
     paths = {}
     
     for scores, fn, key in [
@@ -129,21 +132,32 @@ def auto_mail_results(user_name, user_email):
         (difference_scores,   plot_disc_graph_change, "change"),
     ]:
     
-        fig, ax = plt.subplots(figsize=g_size, dpi=72)
+        fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
         fn(scores, ax)
         path = f"/tmp/{key}.png"
         fig.savefig(path, bbox_inches="tight", transparent=True)
         plt.close(fig)
         paths[key] = path
         
+    # -------- build a dict the PDF layer can consume -----------------
+    scores = {
+        "most":   {**st.session_state.disc_scores_most,
+                   "Total": sum(st.session_state.disc_scores_most.values())},
+        "least":  {**st.session_state.disc_scores_least,
+                   "Total": sum(st.session_state.disc_scores_least.values())},
+        "change": {"D": diff_D, "I": diff_I, "S": diff_S, "C": diff_C,
+                   "*": "-",   "Total": diff_total},
+    }
+    
     pdf_path = build_pdf(
         user = {
             "name":   user_name,
             "email":  user_email,
-            "dob":    st.session_state.user_details["date_of_birth"],
+            "date":   st.session_state.user_details["date_of_birth"],
             "gender": st.session_state.user_details["gender"],
         },
-        graphs = paths,                 
+        graphs = paths,
+        scores = scores,
         out_path = "/tmp/DISC_Report.pdf",
     )
     
@@ -201,14 +215,15 @@ elif not st.session_state.assessment_completed:
         st.write("**Most Likely**")
         for option in mapping.keys():
             key = f"most_{idx}_{option}"
-            st.checkbox("", key=key, on_change=on_change_checkbox, args=(key, idx, 0))
+            st.checkbox(" ", key=key, on_change=on_change_checkbox, 
+                        args=(key, idx, 0), label_visibility="collapsed")
             st.session_state.checkbox_keys[idx][0].append(key)
 
     with col2:
         st.write("**Least Likely**")
         for option in mapping.keys():
             key = f"least_{idx}_{option}"
-            st.checkbox("", key=key, on_change=on_change_checkbox, args=(key, idx, 1))
+            st.checkbox(" ", key=key, on_change=on_change_checkbox, args=(key, idx, 1), label_visibility="collapsed")
             st.session_state.checkbox_keys[idx][1].append(key)
 
     with col3:
