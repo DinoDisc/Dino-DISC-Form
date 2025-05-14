@@ -25,6 +25,53 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import itertools
 
+# fill these in with exactly the y-positions you want for each v in 0..24
+GRAPHLABELS_MOST = {
+    'D': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,21],   # length-25 list of pt-positions
+    'I': [0,1,2,3,4,5,6,7,8,9,11,19],
+    'S': [0,1,2,3,4,5,6,7,8,9,10,12,14,20],
+    'C': [0,1,2,3,4,5,6,7,8,9,11,13,17],
+}
+GRAPHLABELS_LEAST = {
+    'D': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,20],
+    'I': [0,1,2,3,4,5,6,7,8,9,10,11,12,19],
+    'S': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,16,19],
+    'C': [0,1,2,3,4,5,6,7,8,9,10,11,12,13,15,17],
+}
+GRAPHLABELS_CHANGE = {
+    'D': [-20,-16,-12,-11,-10,-9,-7,-6,-4,-3,-2,0,+1,+3,+5,+7,+8,+9,+10,+12,+13,+14,+15,+18,+21],
+    'I': [-18,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,+1,+2,+3,+4,+5,+6,+7,+8,+10,+18],
+    'S': [-18,-15,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,+1,+2,+3,+4,+5,+7,+8,+9,+10,+11,+15,+20],
+    'C': [-22,-19,-15,-13,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,+1,+2,+3,+4,+5,+6,+10,+17],
+}
+
+# ------------------------------------------------------------------
+# small helpers for grid annotations
+# ------------------------------------------------------------------
+_LABEL_FSIZE   = 4         # tiny font
+_LABEL_X_SHIFT = 0.20      # shift to the right of the column centre
+
+def _annotate_column_numbers(ax, x_pos, mapping_rowlist, label_list):
+    """
+    Plot the tiny guideline numbers for one DISC column.
+
+    mapping_rowlist : list of 50 y-values  (index 0 … 48)
+    label_list      : list of scores (–24 … +24) you want to show
+    """
+    for v in label_list:
+        idx = v + 24                     # <- always shift (stage b)
+
+        if 0 <= idx < len(mapping_rowlist):
+            y = mapping_rowlist[idx]     # stage c  (same as dots)
+
+            ax.text(x_pos + _LABEL_X_SHIFT, y,      # stage d
+                    str(v),                          # keep sign
+                    ha="left", va="center",
+                    fontsize=_LABEL_FSIZE,
+                    color="black",
+                    zorder=3)
+
+
 
 __all__ = [
     "plot_disc_graph_most",
@@ -40,8 +87,7 @@ GRID_Y = np.linspace(0, 80, 19)      # 0,4.44,…,80  ==> 18 equal bands
 MAJOR_Y = {10, 20, 30, 50, 60, 70}  # dotted grey
 MID_Y   = 40                        # heavy solid
 
-TXT_OFFSET_UP   = 1.5
-TXT_OFFSET_DOWN = 1.5
+TXT   = 0
 
 def _style_ax(ax, *, invert=False, show_vals=False):
     """Apply paper-like styling and optional numeric row labels."""
@@ -69,8 +115,15 @@ def _style_ax(ax, *, invert=False, show_vals=False):
     # central thick line
     ax.axhline(mid, lw=1.2, color="black", zorder=0)
 
+    for xcol in range(4):                      # 0,1,2,3  (D,I,S,C)
+        ax.axvline(xcol,
+                   lw=0.3,
+                   color="lightgrey",
+                   zorder=0)                  # keep under dots / line
+
     # outer rectangle
-    rect = Rectangle((-0.5, 0), 4, 80, fill=False, lw=0.8, color="black", zorder=1)
+    rect = Rectangle((-0.5, 0), 4, 80,
+                     fill=False, lw=0.8, color="black", zorder=1)
     ax.add_patch(rect)
 
     # remove ticks/labels
@@ -103,8 +156,14 @@ def plot_disc_graph_most(values, ax):
 
     _style_ax(ax, invert=False)
     ax.plot(x, y, "o-", color="#1C80BC", lw=0.8, markersize=4, zorder=1)
-    for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color="#1C80BC")
+    # --- NEW: tiny grid numbers ------------------------------------
+    for col, L in enumerate(labels):           # D I S C
+        _annotate_column_numbers(
+            ax,
+            x_pos      = col,
+            mapping_rowlist = mappings[L],
+            label_list      = GRAPHLABELS_MOST[L],
+        )
 
     return ax
 
@@ -117,18 +176,23 @@ def plot_disc_graph_least(values, ax):
     labels = "DISC"
     mappings = {
         'D': [3, 7, 18, 27, 33, 37, 42, 46, 47, 53, 55, 58, 62, 66, 68, 71, 73, 74, 75, 76, 77, 78, 79, 79, 80],
-        'I': [5, 10, 21, 27, 37, 42, 50, 58, 63, 66, 71, 73, 75, 77, 77, 78, 78, 78, 79, 79, 79, 80, 80, 80, 80],
+        'I': [5, 10, 21, 27, 37, 42, 50, 58, 63, 66, 71, 73, 75, 77, 77, 78, 78, 78, 79,79, 79, 80, 80, 80, 80],
         'S': [3, 5, 10, 21, 27, 33, 37, 46, 50, 55, 63, 66, 71, 73, 74, 75, 76, 77, 78, 79, 80, 80, 80, 80, 80],
         'C': [3, 5, 13, 21, 27, 33, 37, 42, 46, 53, 57, 66, 68, 71, 73, 75, 76, 77, 78, 79, 79, 80, 80, 80, 80]
     }
     y = [mappings[L][v] for L, v in zip(labels, values)]
     x = np.arange(4)
 
-    _style_ax(ax, invert=False)
-    ax.plot(x, y, "o-", color="#A00100", lw=0.8, markersize=4, zorder=1)
-
-    for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy - TXT_OFFSET_DOWN, str(vv), ha="center", va="top", fontsize=8, color="#A00100")
+    _style_ax(ax, invert=True)                      # <- was invert=False
+    ax.plot(x, y, "o-", color="#A00100",
+            lw=0.8, markersize=4, zorder=1)
+    for col, L in enumerate(labels):
+        _annotate_column_numbers(
+            ax,
+            x_pos      = col,
+            mapping_rowlist = mappings[L],
+            label_list      = GRAPHLABELS_LEAST[L],
+        )
 
     return ax
 
@@ -152,8 +216,12 @@ def plot_disc_graph_change(values, ax):
 
     _style_ax(ax, invert=False)
     ax.plot(x, y, "o-", color="#278D8D", lw=0.8, markersize=4, zorder=1)
-
-    for xx, yy, vv in zip(x, y, values):
-        ax.text(xx, yy + TXT_OFFSET_UP, str(vv), ha="center", va="bottom", fontsize=8, color="#278D8D")
+    for col, L in enumerate(labels):
+        _annotate_column_numbers(
+            ax,
+            x_pos      = col,
+            mapping_rowlist = mappings[L],
+            label_list      = GRAPHLABELS_CHANGE[L],
+        )
 
     return ax

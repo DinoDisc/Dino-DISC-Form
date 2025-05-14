@@ -114,7 +114,6 @@ def draw_static_page(c: canvas.Canvas) -> None:
         y = table_top - row * row_h - 10
         txt(note_x,     y,       "Must Equal", size=7)
         txt(note_x + 4, y - 14, "24",         size=12, bold=True)
-    txt(note_x - 2, table_top - 2 * row_h - 18, "Do not calculate ★ value", size=7)
 
     # explanatory note under table
     small = " "
@@ -185,14 +184,12 @@ def draw_client_layer(c: canvas.Canvas,
         for idx, key in enumerate(rows):
             y_mid = table_top - idx * row_h - row_h / 2 - 3
             row   = scores[key]
-            _draw_score_row(
-                c,
-                [row["D"], row["I"], row["S"], row["C"],
-                 row["*"], row["Total"]],
-                y_mid,
-                table_left,
-                col_w,
-            )
+            vals = [
+                row["D"], row["I"], row["S"], row["C"],
+                row["*"],
+                "" if key=="change" else row["Total"]   
+            ]
+            _draw_score_row(c, vals, y_mid, table_left, col_w)
     ## --- embed PNG graphs -------------------------------------------
     g_w, g_h = 150, 200
     g_gap = 16

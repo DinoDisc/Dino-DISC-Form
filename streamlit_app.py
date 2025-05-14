@@ -24,9 +24,9 @@ import matplotlib.pyplot as plt
 import os 
 from email.mime.application import MIMEApplication
 
-# Dimensions for DISC graphs in points (1 pt = 1 px @ 72 dpi)
-FIGSIZE_PT = (150, 200)
-FIGSIZE_IN = (FIGSIZE_PT[0] / 72, FIGSIZE_PT[1] / 72)
+# Dimensions for DISC graphs in points (1 pt = 1 px @ 300 dpi)
+FIGSIZE_PT = (600, 800)
+FIGSIZE_IN = (FIGSIZE_PT[0] / 300, FIGSIZE_PT[1] / 300)
 
 # Load mappings from JSON file
 with open('disc_mappings.json', 'r') as f:
@@ -123,7 +123,7 @@ def auto_mail_results(user_name, user_email):
     message_alternative.attach(MIMEText(text, 'plain'))
     message_alternative.attach(MIMEText(html, 'html'))
     
-    fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
+    fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=300)   # 1 pt == 1 px
     paths = {}
     
     for scores, fn, key in [
@@ -132,7 +132,7 @@ def auto_mail_results(user_name, user_email):
         (difference_scores,   plot_disc_graph_change, "change"),
     ]:
     
-        fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=72)   # 1 pt == 1 px
+        fig, ax = plt.subplots(figsize=FIGSIZE_IN, dpi=300)   # 1 pt == 1 px
         fn(scores, ax)
         path = f"/tmp/{key}.png"
         fig.savefig(path, bbox_inches="tight", transparent=True)
