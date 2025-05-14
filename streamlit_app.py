@@ -146,7 +146,7 @@ def auto_mail_results(user_name, user_email):
         "least":  {**st.session_state.disc_scores_least,
                    "Total": sum(st.session_state.disc_scores_least.values())},
         "change": {"D": diff_D, "I": diff_I, "S": diff_S, "C": diff_C,
-                   "*": "-",   "Total": diff_total},
+                   "*": "-",   "Total": " "},
     }
     
     pdf_path = build_pdf(
