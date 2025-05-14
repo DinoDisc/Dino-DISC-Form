@@ -5,7 +5,7 @@ from datetime import date, datetime
 def input_user_details():
     # Create the table layout with checkboxes
     st.write(f"### DISC Personality Assessment")
-    st.write("""Your Payment has been processed! For any queries, please contact dino.grif@gmail.com""")
+    st.write("""Your Payment has been processed! For any queries, please contact dino@dino-griffin.com""")
     st.write("### Please fill in your details")
     
     # Collect user details
