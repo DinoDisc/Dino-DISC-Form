@@ -53,6 +53,29 @@ _LABEL_X_SHIFT = 0.20      # shift to the right of the column centre
 
 def _annotate_column_numbers(ax, x_pos, mapping_rowlist, label_list):
     """
+    Draw the small grid numbers for one column.
+
+    Parameters
+    ----------
+    ax               : matplotlib Axes
+    x_pos            : float      – column x (0,1,2,3)
+    mapping_rowlist  : list[float] length-25, y-positions for score 0..24
+    label_list       : list[int]  the *scores* you want printed in this column
+    """
+    for v in label_list:               # v is a score (0-24 or –24..+24 for change)
+        try:
+            y = mapping_rowlist[v]     # where that score lives on this graph
+        except IndexError:             # e.g. negative indices in CHANGE graph
+            continue
+        ax.text(x_pos + _LABEL_X_SHIFT, y,
+                str(v),
+                ha="left", va="center",
+                fontsize=_LABEL_FSIZE,
+                color="black",
+                zorder=3)
+        
+def _annotate_column_numbers_change(ax, x_pos, mapping_rowlist, label_list):
+    """
     Plot the tiny guideline numbers for one DISC column.
 
     mapping_rowlist : list of 50 y-values  (index 0 … 48)
@@ -70,7 +93,6 @@ def _annotate_column_numbers(ax, x_pos, mapping_rowlist, label_list):
                     fontsize=_LABEL_FSIZE,
                     color="black",
                     zorder=3)
-
 
 
 __all__ = [
@@ -217,7 +239,7 @@ def plot_disc_graph_change(values, ax):
     _style_ax(ax, invert=False)
     ax.plot(x, y, "o-", color="#278D8D", lw=0.8, markersize=4, zorder=1)
     for col, L in enumerate(labels):
-        _annotate_column_numbers(
+        _annotate_column_numbers_change(
             ax,
             x_pos      = col,
             mapping_rowlist = mappings[L],
