@@ -293,4 +293,4 @@ else:
     auto_mail_results(user_name, user_email)
     st.write(f"### Thank you, {user_name}, for completing the assessment!")
     st.write(f"Your results have been sent to Dino. He will be in contact through {user_email}.")
-    st.write("If you have any questions, do not hesitate to reach out at: dino.grif@gmail.com .") 
+    st.write("If you have any questions, do not hesitate to reach out at: dino@dino-griffin.com .") 
