@@ -1,4 +1,4 @@
-# playground.py  --------------------------------------------------------
+# disc_pdf.py  --------------------------------------------------------
 """
 Vector‑rebuild of the IML DISC Insights™ “Personality System Graph Page”.
 This version **removes**:
