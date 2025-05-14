@@ -7,11 +7,7 @@ from checkbox_change import on_change_checkbox
 from save_selection import save_selections
 from disc_pdf import build_pdf
 
-from graphing import (
-    plot_disc_graph_most,
-    plot_disc_graph_least,
-    plot_disc_graph_change,
-)
+from graphing import plot_disc_graph_most, plot_disc_graph_least, plot_disc_graph_change
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
